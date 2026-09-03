@@ -94,11 +94,11 @@ output "s3_summary" {
 
     bucket_name = aws_s3_bucket.this.bucket
 
-    bucket_arn  = aws_s3_bucket.this.arn
+    bucket_arn = aws_s3_bucket.this.arn
 
-    region      = data.aws_region.current.name
+    region = data.aws_region.current.name
 
-    kms_key     = var.kms_key_arn
+    kms_key = var.kms_key_arn
 
   }
 

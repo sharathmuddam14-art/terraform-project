@@ -1,5 +1,10 @@
 data "aws_iam_policy_document" "kms_policy" {
 
+
+  #################################################
+  # Account Root Permissions
+  #################################################
+
   statement {
 
     sid = "EnableRootPermissions"
@@ -21,6 +26,51 @@ data "aws_iam_policy_document" "kms_policy" {
     actions = [
 
       "kms:*"
+
+    ]
+
+    resources = [
+
+      "*"
+
+    ]
+
+  }
+
+
+  #################################################
+  # CloudWatch Logs Permissions
+  #################################################
+
+  statement {
+
+    sid = "AllowCloudWatchLogs"
+
+    effect = "Allow"
+
+    principals {
+
+      type = "Service"
+
+      identifiers = [
+
+        "logs.${data.aws_region.current.name}.amazonaws.com"
+
+      ]
+
+    }
+
+    actions = [
+
+      "kms:Encrypt",
+
+      "kms:Decrypt",
+
+      "kms:ReEncrypt*",
+
+      "kms:GenerateDataKey*",
+
+      "kms:DescribeKey"
 
     ]
 

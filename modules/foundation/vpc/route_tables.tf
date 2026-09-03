@@ -54,9 +54,7 @@ resource "aws_route_table" "private" {
 
     cidr_block = "0.0.0.0/0"
 
-    nat_gateway_id = aws_nat_gateway.nat[
-      replace(each.key, "private", "public")
-    ].id
+    nat_gateway_id = values(aws_nat_gateway.nat)[0].id
 
   }
 

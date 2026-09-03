@@ -36,10 +36,22 @@ variable "deletion_window_in_days" {
 
   description = "Deletion Window"
 
-  type    = number
+  type = number
 
   default = 30
 
 }
 
+#################################################
+# KMS Rotation
+#################################################
 
+variable "enable_key_rotation" {
+
+  description = "Enable automatic KMS key rotation"
+
+  type = bool
+
+  default = true
+
+}

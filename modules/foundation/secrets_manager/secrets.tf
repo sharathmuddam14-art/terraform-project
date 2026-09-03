@@ -4,11 +4,11 @@
 
 resource "aws_secretsmanager_secret" "this" {
 
-  name        = local.secret_name
+  name = local.secret_name
 
   description = var.secret_description
 
-  kms_key_id  = var.kms_key_id
+  kms_key_id = var.kms_key_id
 
   recovery_window_in_days = 7
 

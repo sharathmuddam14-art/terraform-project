@@ -40,7 +40,7 @@ resource "aws_iam_role_policy_attachment" "oidc_attachments" {
   policy_arn = aws_iam_policy.policies[each.value.policy_key].arn
 }
 
-[root@ip-10-0-1-156 iam]# cat outputs.tf
+
 
 # ==============================================================
 # Standard IAM Outputs

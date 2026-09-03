@@ -10,13 +10,13 @@ data "aws_iam_policy_document" "bucket_policy" {
 
   statement {
 
-    sid    = "DenyInsecureTransport"
+    sid = "DenyInsecureTransport"
 
     effect = "Deny"
 
     principals {
 
-      type        = "*"
+      type = "*"
 
       identifiers = ["*"]
 
@@ -33,7 +33,7 @@ data "aws_iam_policy_document" "bucket_policy" {
 
     condition {
 
-      test     = "Bool"
+      test = "Bool"
 
       variable = "aws:SecureTransport"
 

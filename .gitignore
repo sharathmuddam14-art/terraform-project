@@ -1,0 +1,26 @@
+# Terraform
+**/.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+.terraform.tfstate.lock.info
+
+# Terraform variable files containing secrets
+# Uncomment if your tfvars contain passwords/secrets
+# *.tfvars
+
+# Vim / editor temporary files
+*.swp
+*.swo
+.*.swp
+.*.swo
+
+# OS
+.DS_Store
+*.backup
+
+# Terraform state
+*.tfstate
+*.tfstate.*
+**/.terraform/modules/

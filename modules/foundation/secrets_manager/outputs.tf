@@ -80,13 +80,13 @@ output "secret_summary" {
 
   value = {
 
-    secret_name       = aws_secretsmanager_secret.this.name
+    secret_name = aws_secretsmanager_secret.this.name
 
-    secret_arn        = aws_secretsmanager_secret.this.arn
+    secret_arn = aws_secretsmanager_secret.this.arn
 
-    kms_key           = aws_secretsmanager_secret.this.kms_key_id
+    kms_key = aws_secretsmanager_secret.this.kms_key_id
 
-    recovery_window   = aws_secretsmanager_secret.this.recovery_window_in_days
+    recovery_window = aws_secretsmanager_secret.this.recovery_window_in_days
 
   }
 
