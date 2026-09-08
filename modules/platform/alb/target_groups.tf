@@ -1,27 +1,33 @@
 resource "aws_lb_target_group" "jenkins" {
   count = local.enable_jenkins ? 1 : 0
 
-  name = "test-jenkins-tg"
+  name = "${var.environment}-jenkins-tg"
 
-  port     = 8080
+  port     = var.jenkins_port
   protocol = "HTTP"
 
-  vpc_id = var.vpc_id
-
   target_type = "instance"
+
+  vpc_id = var.vpc_id
 
   health_check {
     enabled             = true
     protocol            = "HTTP"
-    port                = "8080"
+    port                = "traffic-port"
     path                = "/login"
     matcher             = "200-399"
     interval            = 30
-    timeout             = 10
-    healthy_threshold   = 3
+    timeout             = 5
+    healthy_threshold   = 2
     unhealthy_threshold = 3
   }
+
+  tags = {
+    Name        = "${var.environment}-jenkins-tg"
+    Environment = var.environment
+  }
 }
+
 
 resource "aws_lb_target_group_attachment" "jenkins" {
   count = local.enable_jenkins ? 1 : 0
@@ -30,32 +36,40 @@ resource "aws_lb_target_group_attachment" "jenkins" {
 
   target_id = module.jenkins[0].instance_id
 
-  port = 8080
+  port = var.jenkins_port
 }
+
+
 resource "aws_lb_target_group" "nexus" {
   count = local.enable_nexus ? 1 : 0
 
-  name = "test-nexus-tg"
+  name = "${var.environment}-nexus-tg"
 
-  port     = 8081
+  port     = var.nexus_port
   protocol = "HTTP"
 
-  vpc_id = var.vpc_id
-
   target_type = "instance"
+
+  vpc_id = var.vpc_id
 
   health_check {
     enabled             = true
     protocol            = "HTTP"
-    port                = "8081"
+    port                = "traffic-port"
     path                = "/"
     matcher             = "200-399"
     interval            = 30
-    timeout             = 10
-    healthy_threshold   = 3
+    timeout             = 5
+    healthy_threshold   = 2
     unhealthy_threshold = 3
   }
+
+  tags = {
+    Name        = "${var.environment}-nexus-tg"
+    Environment = var.environment
+  }
 }
+
 
 resource "aws_lb_target_group_attachment" "nexus" {
   count = local.enable_nexus ? 1 : 0
@@ -64,32 +78,40 @@ resource "aws_lb_target_group_attachment" "nexus" {
 
   target_id = module.nexus[0].instance_id
 
-  port = 8081
+  port = var.nexus_port
 }
+
+
 resource "aws_lb_target_group" "sonarqube" {
   count = local.enable_sonarqube ? 1 : 0
 
-  name = "test-sonarqube-tg"
+  name = "${var.environment}-sonarqube-tg"
 
-  port     = 9000
+  port     = var.sonarqube_port
   protocol = "HTTP"
 
-  vpc_id = var.vpc_id
-
   target_type = "instance"
+
+  vpc_id = var.vpc_id
 
   health_check {
     enabled             = true
     protocol            = "HTTP"
-    port                = "9000"
+    port                = "traffic-port"
     path                = "/api/system/status"
     matcher             = "200-399"
     interval            = 30
-    timeout             = 10
-    healthy_threshold   = 3
+    timeout             = 5
+    healthy_threshold   = 2
     unhealthy_threshold = 3
   }
+
+  tags = {
+    Name        = "${var.environment}-sonarqube-tg"
+    Environment = var.environment
+  }
 }
+
 
 resource "aws_lb_target_group_attachment" "sonarqube" {
   count = local.enable_sonarqube ? 1 : 0
@@ -98,5 +120,5 @@ resource "aws_lb_target_group_attachment" "sonarqube" {
 
   target_id = module.sonarqube[0].instance_id
 
-  port = 9000
+  port = var.sonarqube_port
 }

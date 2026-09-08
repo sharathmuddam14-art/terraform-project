@@ -1,10 +1,5 @@
 variable "name" {
-  description = "SonarQube EC2 instance name"
-  type        = string
-}
-
-variable "aws_region" {
-  description = "AWS region"
+  description = "SonarQube instance name"
   type        = string
 }
 
@@ -26,17 +21,40 @@ variable "alb_security_group_id" {
 variable "instance_type" {
   description = "SonarQube EC2 instance type"
   type        = string
-  default     = "t3.medium"
 }
 
 variable "root_volume_size" {
-  description = "SonarQube root EBS volume size"
+  description = "SonarQube root volume size"
   type        = number
-  default     = 50
 }
 
 variable "ami_id" {
-  description = "Optional custom AMI ID"
+  description = "Optional AMI ID"
   type        = string
   default     = null
+}
+
+variable "java_version" {
+  description = "Java version"
+  type        = string
+}
+
+variable "sonarqube_version" {
+  description = "SonarQube version"
+  type        = string
+}
+
+variable "sonarqube_port" {
+  description = "SonarQube port"
+  type        = number
+}
+
+variable "db_name" {
+  description = "PostgreSQL database name"
+  type        = string
+}
+
+variable "db_user" {
+  description = "PostgreSQL database username"
+  type        = string
 }

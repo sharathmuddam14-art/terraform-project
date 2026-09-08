@@ -4,15 +4,15 @@ resource "aws_security_group" "sonarqube" {
   vpc_id      = var.vpc_id
 
   ingress {
-    description     = "SonarQube traffic from ALB"
-    from_port       = 9000
-    to_port         = 9000
+    description     = "SonarQube from ALB"
+    from_port       = var.sonarqube_port
+    to_port         = var.sonarqube_port
     protocol        = "tcp"
     security_groups = [var.alb_security_group_id]
   }
 
   egress {
-    description = "Outbound access"
+    description = "Allow outbound traffic"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"

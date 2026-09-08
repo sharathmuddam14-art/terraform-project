@@ -1,5 +1,5 @@
 locals {
-  enable_jenkins   = true
-  enable_nexus     = true
-  enable_sonarqube = false
+  enable_jenkins   = var.jenkins_enabled
+  enable_nexus     = var.nexus_enabled
+  enable_sonarqube = var.sonarqube_enabled
 }

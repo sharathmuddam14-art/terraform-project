@@ -4,15 +4,15 @@ resource "aws_security_group" "jenkins" {
   vpc_id      = var.vpc_id
 
   ingress {
-    description     = "Jenkins from platform ALB"
-    from_port       = 8080
-    to_port         = 8080
+    description     = "Jenkins from ALB"
+    from_port       = var.jenkins_port
+    to_port         = var.jenkins_port
     protocol        = "tcp"
     security_groups = [var.alb_security_group_id]
   }
 
   egress {
-    description = "Outbound access"
+    description = "Allow outbound traffic"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"

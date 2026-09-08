@@ -453,21 +453,44 @@ module "load_balancer" {
     module.eks
   ]
 }
-############################################################
-# PLATFORM ALB
-############################################################
-
 module "alb" {
-
   source = "../../modules/platform/alb"
 
-  ##########################################################
-  # NETWORK
-  ##########################################################
+  environment = var.environment
+  aws_region  = var.aws_region
 
   vpc_id = module.vpc.vpc_id
 
   public_subnet_ids = module.vpc.public_subnet_ids
 
   private_subnet_ids = module.vpc.private_subnet_ids
+
+  alb_name = var.platform_alb_name
+
+  jenkins_enabled   = var.jenkins_enabled
+  nexus_enabled     = var.nexus_enabled
+  sonarqube_enabled = var.sonarqube_enabled
+
+  jenkins_java_version   = var.jenkins_java_version
+  nexus_java_version     = var.nexus_java_version
+  sonarqube_java_version = var.sonarqube_java_version
+
+  jenkins_port   = var.jenkins_port
+  nexus_port     = var.nexus_port
+  sonarqube_port = var.sonarqube_port
+
+  jenkins_instance_type   = var.jenkins_instance_type
+  nexus_instance_type     = var.nexus_instance_type
+  sonarqube_instance_type = var.sonarqube_instance_type
+
+  jenkins_root_volume_size   = var.jenkins_root_volume_size
+  nexus_root_volume_size     = var.nexus_root_volume_size
+  sonarqube_root_volume_size = var.sonarqube_root_volume_size
+
+  jenkins_package   = var.jenkins_package
+  nexus_version     = var.nexus_version
+  sonarqube_version = var.sonarqube_version
+
+  sonarqube_db_name = var.sonarqube_db_name
+  sonarqube_db_user = var.sonarqube_db_user
 }

@@ -15,10 +15,5 @@ output "security_group_id" {
 
 output "port" {
   description = "SonarQube port"
-  value       = 9000
-}
-
-output "database_secret_arn" {
-  description = "SonarQube PostgreSQL credentials secret ARN"
-  value       = aws_secretsmanager_secret.sonarqube_db.arn
+  value       = var.sonarqube_port
 }

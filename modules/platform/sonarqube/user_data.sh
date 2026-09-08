@@ -1,4 +1,3 @@
-```bash
 #!/bin/bash
 
 set -e
@@ -7,78 +6,60 @@ LOG_FILE="/var/log/sonarqube-install.log"
 
 exec > >(tee -a "$LOG_FILE") 2>&1
 
-echo "=================================================="
-echo "Starting SonarQube installation"
-echo "=================================================="
 
-
-# ==================================================
+############################################################
 # VARIABLES
-# ==================================================
+############################################################
 
-DB_NAME="sonarqube"
-DB_USER="sonarqube"
+DB_NAME="${db_name}"
+DB_USER="${db_user}"
 
-SONARQUBE_VERSION="26.8.0.126808"
+SONARQUBE_VERSION="${sonarqube_version}"
+SONARQUBE_PORT="${sonarqube_port}"
+JAVA_VERSION="${java_version}"
 
 SONARQUBE_URL="https://binaries.sonarsource.com/Distribution/sonarqube/sonarqube-$${SONARQUBE_VERSION}.zip"
 
 echo "Database name: $DB_NAME"
 echo "Database user: $DB_USER"
 echo "SonarQube version: $SONARQUBE_VERSION"
-echo "SonarQube URL: $SONARQUBE_URL"
+echo "SonarQube port: $SONARQUBE_PORT"
 
 
-# ==================================================
+############################################################
 # SYSTEM UPDATE
-# ==================================================
-
-echo "=================================================="
-echo "Updating operating system"
-echo "=================================================="
+############################################################
 
 dnf update -y
 
 
-# ==================================================
-# INSTALL REQUIRED PACKAGES
-# ==================================================
-
-echo "=================================================="
-echo "Installing required packages"
-echo "=================================================="
+############################################################
+# REQUIRED PACKAGES
+############################################################
 
 dnf install -y \
-  java-21-amazon-corretto \
+  "java-${JAVA_VERSION}-amazon-corretto" \
   wget \
   unzip \
   jq \
   openssl \
-  awscli \
+  curl \
   amazon-ssm-agent \
   postgresql16 \
   postgresql16-server \
   postgresql16-contrib
 
 
-# ==================================================
-# VERIFY JAVA
-# ==================================================
-
-echo "=================================================="
-echo "Checking Java"
-echo "=================================================="
+############################################################
+# JAVA
+############################################################
 
 java -version
 
 
-# ==================================================
-# START SSM AGENT
-# ==================================================
-
-echo "=================================================="
-echo "Starting SSM Agent"
-echo "=================================================="
+############################################################
+# SSM
+############################################################
 
 systemctl daemon-reload
 
@@ -86,59 +67,34 @@ systemctl enable amazon-ssm-agent
 
 systemctl start amazon-ssm-agent
 
-systemctl status amazon-ssm-agent --no-pager || true
 
-
-# ==================================================
-# CONFIGURE KERNEL PARAMETERS
-# ==================================================
-# SonarQube uses Elasticsearch internally.
-# Current SonarQube versions require sufficient
-# virtual memory mappings and file descriptors.
-
-echo "=================================================="
-echo "Configuring kernel parameters"
-echo "=================================================="
+############################################################
+# KERNEL PARAMETERS
+############################################################
 
 cat > /etc/sysctl.d/99-sonarqube.conf <<EOF
-
 vm.max_map_count=524288
 fs.file-max=131072
-
 EOF
 
 sysctl --system
 
 
-# ==================================================
-# INITIALIZE POSTGRESQL
-# ==================================================
-
-echo "=================================================="
-echo "Initializing PostgreSQL"
-echo "=================================================="
+############################################################
+# POSTGRESQL INITIALIZATION
+############################################################
 
 if [ ! -f /var/lib/pgsql/data/PG_VERSION ]; then
-
-    echo "PostgreSQL database cluster does not exist."
 
     sudo -u postgres initdb \
       -D /var/lib/pgsql/data
 
-else
-
-    echo "PostgreSQL database cluster already exists."
-
 fi
 
 
-# ==================================================
+############################################################
 # START POSTGRESQL
-# ==================================================
-
-echo "=================================================="
-echo "Starting PostgreSQL"
-echo "=================================================="
+############################################################
 
 systemctl enable postgresql
 
@@ -146,76 +102,37 @@ systemctl start postgresql
 
 sleep 10
 
-systemctl status postgresql --no-pager || true
 
-
-# ==================================================
+############################################################
 # VERIFY POSTGRESQL
-# ==================================================
-
-echo "=================================================="
-echo "Testing PostgreSQL"
-echo "=================================================="
+############################################################
 
 sudo -u postgres psql -c "SELECT version();"
 
 
-# ==================================================
-# GENERATE DATABASE PASSWORD
-# ==================================================
-
-echo "=================================================="
-echo "Generating PostgreSQL password"
-echo "=================================================="
-
-DB_PASSWORD=$(openssl rand -base64 48 | tr -dc 'A-Za-z0-9' | head -c 32)
-
-if [ -z "$DB_PASSWORD" ]; then
-
-    echo "ERROR: Failed to generate database password."
-
-    exit 1
-
-fi
-
-echo "Database password generated successfully."
-
-
-# ==================================================
-# CREATE POSTGRESQL USER
-# ==================================================
-
-echo "=================================================="
-echo "Creating PostgreSQL user"
-echo "=================================================="
+############################################################
+# CREATE DATABASE USER
+############################################################
 
 if sudo -u postgres psql -tAc \
   "SELECT 1 FROM pg_roles WHERE rolname='$DB_USER'" | grep -q 1; then
 
     echo "PostgreSQL user already exists."
 
-    sudo -u postgres psql <<EOF
-ALTER USER $${DB_USER} WITH PASSWORD '$${DB_PASSWORD}';
-EOF
-
 else
 
-    echo "Creating PostgreSQL user..."
+    echo "Creating PostgreSQL user without password."
 
     sudo -u postgres psql <<EOF
-CREATE USER $${DB_USER} WITH PASSWORD '$${DB_PASSWORD}';
+CREATE USER "$DB_USER";
 EOF
 
 fi
 
 
-# ==================================================
-# CREATE SONARQUBE DATABASE
-# ==================================================
-
-echo "=================================================="
-echo "Creating SonarQube database"
-echo "=================================================="
+############################################################
+# CREATE DATABASE
+############################################################
 
 if sudo -u postgres psql -tAc \
   "SELECT 1 FROM pg_database WHERE datname='$DB_NAME'" | grep -q 1; then
@@ -225,73 +142,26 @@ if sudo -u postgres psql -tAc \
 else
 
     sudo -u postgres psql <<EOF
-CREATE DATABASE $${DB_NAME}
-OWNER $${DB_USER}
+CREATE DATABASE "$DB_NAME"
+OWNER "$DB_USER"
 ENCODING 'UTF8';
 EOF
 
 fi
 
 
-# ==================================================
+############################################################
 # VERIFY DATABASE
-# ==================================================
+############################################################
 
-echo "=================================================="
-echo "Checking SonarQube database"
-echo "=================================================="
+sudo -u postgres psql -c "\l"
 
-sudo -u postgres psql -c "\l" | grep "$DB_NAME" || true
-
-echo "Checking SonarQube database owner..."
-
-sudo -u postgres psql -c "\du" | grep "$DB_USER" || true
+sudo -u postgres psql -c "\du"
 
 
-# ==================================================
-# STORE DATABASE CREDENTIALS IN AWS SECRETS MANAGER
-# ==================================================
-
-echo "=================================================="
-echo "Storing database credentials in Secrets Manager"
-echo "=================================================="
-
-SECRET_JSON=$(jq -n \
-  --arg username "$DB_USER" \
-  --arg password "$DB_PASSWORD" \
-  --arg database "$DB_NAME" \
-  --arg host "127.0.0.1" \
-  --arg port "5432" \
-  '{
-    username: $username,
-    password: $password,
-    database: $database,
-    host: $host,
-    port: $port
-  }')
-
-aws secretsmanager put-secret-value \
-  --secret-id "${secret_arn}" \
-  --secret-string "$SECRET_JSON" \
-  --region "${aws_region}"
-
-echo "Database credentials stored in Secrets Manager successfully."
-
-
-# ==================================================
-# REMOVE PASSWORD FROM SHELL VARIABLE
-# ==================================================
-
-unset DB_PASSWORD
-
-
-# ==================================================
-# CREATE SONARQUBE LINUX USER
-# ==================================================
-
-echo "=================================================="
-echo "Creating SonarQube operating-system user"
-echo "=================================================="
+############################################################
+# CREATE SONARQUBE USER
+############################################################
 
 if id sonarqube >/dev/null 2>&1; then
 
@@ -308,13 +178,9 @@ else
 fi
 
 
-# ==================================================
-# CREATE SONARQUBE DIRECTORIES
-# ==================================================
-
-echo "=================================================="
-echo "Creating SonarQube directories"
-echo "=================================================="
+############################################################
+# SONARQUBE DIRECTORIES
+############################################################
 
 mkdir -p /var/sonarqube/data
 mkdir -p /var/sonarqube/temp
@@ -322,13 +188,9 @@ mkdir -p /var/sonarqube/temp
 chown -R sonarqube:sonarqube /var/sonarqube
 
 
-# ==================================================
+############################################################
 # DOWNLOAD SONARQUBE
-# ==================================================
-
-echo "=================================================="
-echo "Downloading SonarQube"
-echo "=================================================="
+############################################################
 
 cd /opt
 
@@ -343,13 +205,9 @@ wget \
   "$SONARQUBE_URL"
 
 
-# ==================================================
+############################################################
 # VERIFY DOWNLOAD
-# ==================================================
-
-echo "=================================================="
-echo "Verifying SonarQube download"
-echo "=================================================="
+############################################################
 
 if [ ! -s /opt/sonarqube.zip ]; then
 
@@ -359,25 +217,17 @@ if [ ! -s /opt/sonarqube.zip ]; then
 
 fi
 
-echo "SonarQube ZIP downloaded successfully."
 
-ls -lh /opt/sonarqube.zip
-
-
-# ==================================================
-# EXTRACT SONARQUBE
-# ==================================================
-
-echo "=================================================="
-echo "Extracting SonarQube"
-echo "=================================================="
+############################################################
+# EXTRACT
+############################################################
 
 unzip -q sonarqube.zip
 
 
-# ==================================================
-# FIND EXTRACTED DIRECTORY
-# ==================================================
+############################################################
+# FIND INSTALLATION DIRECTORY
+############################################################
 
 SONAR_DIR=$(find /opt \
   -maxdepth 1 \
@@ -396,70 +246,56 @@ if [ -z "$SONAR_DIR" ]; then
 
 fi
 
-echo "SonarQube installation directory:"
-echo "$SONAR_DIR"
 
-
-# ==================================================
-# CREATE /opt/sonarqube SYMLINK
-# ==================================================
+############################################################
+# CREATE SYMLINK
+############################################################
 
 rm -rf /opt/sonarqube
 
 ln -s "$SONAR_DIR" /opt/sonarqube
 
 
-# ==================================================
-# SET OWNERSHIP
-# ==================================================
-
-echo "=================================================="
-echo "Setting SonarQube ownership"
-echo "=================================================="
+############################################################
+# OWNERSHIP
+############################################################
 
 chown -R sonarqube:sonarqube "$SONAR_DIR"
 
 
-# ==================================================
-# REMOVE ZIP FILE
-# ==================================================
+############################################################
+# REMOVE ZIP
+############################################################
 
 rm -f /opt/sonarqube.zip
 
 
-# ==================================================
-# CONFIGURE SONARQUBE DATABASE
-# ==================================================
+############################################################
+# SYSTEM LIMITS
+############################################################
 
-echo "=================================================="
-echo "Configuring SonarQube database"
-echo "=================================================="
+cat > /etc/security/limits.d/99-sonarqube.conf <<EOF
+sonarqube soft nofile 65536
+sonarqube hard nofile 65536
+
+sonarqube soft nproc 4096
+sonarqube hard nproc 4096
+EOF
+
+
+############################################################
+# CREATE INITIAL SONARQUBE CONFIGURATION
+############################################################
 
 cat > /opt/sonarqube/conf/sonar.properties <<EOF
 
-# ==================================================
-# DATABASE CONFIGURATION
-# ==================================================
+sonar.jdbc.username=$DB_USER
 
-sonar.jdbc.username=$${DB_USER}
-
-sonar.jdbc.password=$${DB_PASSWORD}
-
-sonar.jdbc.url=jdbc:postgresql://127.0.0.1:5432/$${DB_NAME}
-
-
-# ==================================================
-# SONARQUBE WEB SERVER
-# ==================================================
+sonar.jdbc.url=jdbc:postgresql://127.0.0.1:5432/$DB_NAME
 
 sonar.web.host=0.0.0.0
 
-sonar.web.port=9000
-
-
-# ==================================================
-# SONARQUBE DATA DIRECTORIES
-# ==================================================
+sonar.web.port=$SONARQUBE_PORT
 
 sonar.path.data=/var/sonarqube/data
 
@@ -468,74 +304,30 @@ sonar.path.temp=/var/sonarqube/temp
 EOF
 
 
-# ==================================================
-# SET CONFIGURATION OWNERSHIP
-# ==================================================
-
 chown sonarqube:sonarqube \
   /opt/sonarqube/conf/sonar.properties
 
 
-# ==================================================
-# VERIFY SONARQUBE CONFIGURATION
-# ==================================================
-
-echo "=================================================="
-echo "Checking SonarQube configuration"
-echo "=================================================="
-
-grep -E \
-  '^sonar.jdbc.username|^sonar.jdbc.url|^sonar.web.host|^sonar.web.port|^sonar.path.data|^sonar.path.temp' \
-  /opt/sonarqube/conf/sonar.properties
-
-
-# ==================================================
-# SYSTEM LIMITS
-# ==================================================
-
-echo "=================================================="
-echo "Configuring system limits"
-echo "=================================================="
-
-cat > /etc/security/limits.d/99-sonarqube.conf <<EOF
-
-sonarqube soft nofile 65536
-sonarqube hard nofile 65536
-
-sonarqube soft nproc 4096
-sonarqube hard nproc 4096
-
-EOF
-
-
-# ==================================================
-# CREATE SYSTEMD SERVICE
-# ==================================================
-
-echo "=================================================="
-echo "Creating SonarQube systemd service"
-echo "=================================================="
+############################################################
+# SYSTEMD SERVICE
+############################################################
 
 cat > /etc/systemd/system/sonarqube.service <<'EOF'
-
 [Unit]
 Description=SonarQube Server
 After=network.target postgresql.service
 Requires=postgresql.service
 
 [Service]
-
 Type=forking
 
 User=sonarqube
 Group=sonarqube
 
 ExecStart=/opt/sonarqube/bin/linux-x86-64/sonar.sh start
-
 ExecStop=/opt/sonarqube/bin/linux-x86-64/sonar.sh stop
 
 Restart=on-failure
-
 RestartSec=10
 
 LimitNOFILE=65536
@@ -544,132 +336,49 @@ LimitNPROC=4096
 TimeoutStartSec=600
 
 [Install]
-
 WantedBy=multi-user.target
-
 EOF
 
 
-# ==================================================
-# RELOAD SYSTEMD
-# ==================================================
-
-echo "=================================================="
-echo "Reloading systemd"
-echo "=================================================="
+############################################################
+# SYSTEMD
+############################################################
 
 systemctl daemon-reload
-
-
-# ==================================================
-# ENABLE SONARQUBE
-# ==================================================
-
-echo "=================================================="
-echo "Enabling SonarQube"
-echo "=================================================="
 
 systemctl enable sonarqube
 
 
-# ==================================================
-# START SONARQUBE
-# ==================================================
+############################################################
+# DO NOT START YET
+############################################################
 
-echo "=================================================="
-echo "Starting SonarQube"
-echo "=================================================="
+echo "=========================================================="
+echo "SonarQube installation prepared."
+echo "=========================================================="
 
-systemctl start sonarqube
+echo "Database:"
+echo "  Name: $DB_NAME"
+echo "  User: $DB_USER"
+echo "  Host: 127.0.0.1"
+echo "  Port: 5432"
 
+echo ""
+echo "IMPORTANT:"
+echo "Database password has NOT been generated."
+echo "Database password has NOT been stored in Terraform."
+echo "Database password has NOT been stored in Secrets Manager."
 
-# ==================================================
-# WAIT FOR SONARQUBE
-# ==================================================
+echo ""
+echo "Next step:"
+echo "Connect using SSM and manually set the PostgreSQL password."
 
-echo "=================================================="
-echo "Waiting for SonarQube to become available"
-echo "=================================================="
+echo ""
+echo "After setting the password, configure:"
+echo "/opt/sonarqube/conf/sonar.properties"
 
-SONARQUBE_READY=false
+echo ""
+echo "Then start:"
+echo "systemctl start sonarqube"
 
-for i in {1..60}; do
-
-    echo "Checking SonarQube... attempt $i/60"
-
-    if curl -sf \
-      http://localhost:9000/api/system/status \
-      >/dev/null 2>&1; then
-
-        echo "SonarQube is responding."
-
-        SONARQUBE_READY=true
-
-        break
-
-    fi
-
-    sleep 10
-
-done
-
-
-# ==================================================
-# SONARQUBE STATUS
-# ==================================================
-
-echo "=================================================="
-echo "SonarQube service status"
-echo "=================================================="
-
-systemctl status sonarqube --no-pager || true
-
-
-# ==================================================
-# POSTGRESQL STATUS
-# ==================================================
-
-echo "=================================================="
-echo "PostgreSQL service status"
-echo "=================================================="
-
-systemctl status postgresql --no-pager || true
-
-
-# ==================================================
-# LISTENING PORTS
-# ==================================================
-
-echo "=================================================="
-echo "Listening ports"
-echo "=================================================="
-
-ss -lntp || true
-
-
-# ==================================================
-# FINAL SONARQUBE CHECK
-# ==================================================
-
-if [ "$SONARQUBE_READY" = true ]; then
-
-    echo "=================================================="
-    echo "SonarQube installation completed successfully."
-    echo "SonarQube is available on port 9000."
-    echo "=================================================="
-
-else
-
-    echo "=================================================="
-    echo "WARNING: SonarQube did not become ready."
-    echo "Check:"
-    echo "  systemctl status sonarqube"
-    echo "  journalctl -u sonarqube"
-    echo "  /opt/sonarqube/logs/"
-    echo "=================================================="
-
-    exit 1
-
-fi
-```
-
+echo "=========================================================="

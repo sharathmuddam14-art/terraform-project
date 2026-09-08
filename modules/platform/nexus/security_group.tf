@@ -4,15 +4,15 @@ resource "aws_security_group" "nexus" {
   vpc_id      = var.vpc_id
 
   ingress {
-    description     = "Nexus traffic from ALB"
-    from_port       = 8081
-    to_port         = 8081
+    description     = "Nexus from ALB"
+    from_port       = var.nexus_port
+    to_port         = var.nexus_port
     protocol        = "tcp"
     security_groups = [var.alb_security_group_id]
   }
 
   egress {
-    description = "Outbound access"
+    description = "Allow outbound traffic"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"

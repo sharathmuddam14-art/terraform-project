@@ -8,12 +8,20 @@ resource "aws_instance" "this" {
   associate_public_ip_address = false
 
   iam_instance_profile = aws_iam_instance_profile.nexus.name
+    depends_on = [
+    aws_iam_instance_profile.nexus
+  ]
 
   vpc_security_group_ids = [
     aws_security_group.nexus.id
   ]
 
-  user_data = file("${path.module}/user_data.sh")
+  user_data = templatefile("${path.module}/user_data.sh", {
+  java_version  = var.java_version
+  nexus_version = var.nexus_version
+  NEXUS_VERSION = var.nexus_version
+  nexus_port    = var.nexus_port
+})
 
   root_block_device {
     volume_type = "gp3"
@@ -22,6 +30,7 @@ resource "aws_instance" "this" {
   }
 
   tags = {
-    Name = var.name
+    Name    = var.name
+    Service = "nexus"
   }
 }

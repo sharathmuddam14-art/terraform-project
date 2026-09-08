@@ -210,10 +210,10 @@ node_groups = {
     disk_size = 50
 
 
-    desired_size = 1
+    desired_size = 0
 
 
-    min_size = 1
+    min_size = 0
 
 
     max_size = 1
@@ -502,3 +502,69 @@ access_scope_type = "cluster"
 load_balancer_controller_chart_version = "1.14.0"
 
 load_balancer_controller_replicas = 2
+# ============================================================
+# PLATFORM
+# ============================================================
+platform_alb_name = "test-platform-alb"
+
+
+# ============================================================
+# SERVICES
+# ============================================================
+
+jenkins_enabled   = true
+nexus_enabled     = true
+sonarqube_enabled = true
+
+
+# ============================================================
+# JAVA
+# ============================================================
+
+jenkins_java_version   = "21"
+nexus_java_version     = "21"
+sonarqube_java_version = "21"
+
+
+# ============================================================
+# APPLICATION PORTS
+# ============================================================
+
+jenkins_port   = 8080
+nexus_port     = 8081
+sonarqube_port = 9000
+
+
+# ============================================================
+# EC2 INSTANCE TYPES
+# ============================================================
+
+jenkins_instance_type   = "t3.micro"
+nexus_instance_type     = "t3.micro"
+sonarqube_instance_type = "t3.micro"
+
+
+# ============================================================
+# ROOT VOLUME
+# ============================================================
+
+jenkins_root_volume_size   = 30
+nexus_root_volume_size     = 50
+sonarqube_root_volume_size = 50
+
+
+# ============================================================
+# SOFTWARE
+# ============================================================
+
+jenkins_package   = "jenkins"
+nexus_version     = "3.95.3-02"
+sonarqube_version = "26.8.0.126808"
+
+
+# ============================================================
+# SONARQUBE DATABASE
+# ============================================================
+
+sonarqube_db_name = "sonarqube"
+sonarqube_db_user = "sonarqube"

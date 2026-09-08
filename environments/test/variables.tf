@@ -566,3 +566,110 @@ variable "load_balancer_controller_replicas" {
   description = "Number of AWS Load Balancer Controller replicas"
   type        = number
 }
+
+
+
+variable "platform_alb_name" {
+  description = "Platform ALB name"
+  type        = string
+}
+
+variable "jenkins_enabled" {
+  description = "Enable Jenkins"
+  type        = bool
+}
+
+variable "nexus_enabled" {
+  description = "Enable Nexus"
+  type        = bool
+}
+
+variable "sonarqube_enabled" {
+  description = "Enable SonarQube"
+  type        = bool
+}
+
+variable "jenkins_java_version" {
+  description = "Jenkins Java version"
+  type        = string
+}
+
+variable "nexus_java_version" {
+  description = "Nexus Java version"
+  type        = string
+}
+
+variable "sonarqube_java_version" {
+  description = "SonarQube Java version"
+  type        = string
+}
+
+variable "jenkins_port" {
+  description = "Jenkins application port"
+  type        = number
+}
+
+variable "nexus_port" {
+  description = "Nexus application port"
+  type        = number
+}
+
+variable "sonarqube_port" {
+  description = "SonarQube application port"
+  type        = number
+}
+
+variable "jenkins_instance_type" {
+  description = "Jenkins EC2 instance type"
+  type        = string
+}
+
+variable "nexus_instance_type" {
+  description = "Nexus EC2 instance type"
+  type        = string
+}
+
+variable "sonarqube_instance_type" {
+  description = "SonarQube EC2 instance type"
+  type        = string
+}
+
+variable "jenkins_root_volume_size" {
+  description = "Jenkins root volume size"
+  type        = number
+}
+
+variable "nexus_root_volume_size" {
+  description = "Nexus root volume size"
+  type        = number
+}
+
+variable "sonarqube_root_volume_size" {
+  description = "SonarQube root volume size"
+  type        = number
+}
+
+variable "jenkins_package" {
+  description = "Jenkins package to install"
+  type        = string
+}
+
+variable "nexus_version" {
+  description = "Nexus version"
+  type        = string
+}
+
+variable "sonarqube_version" {
+  description = "SonarQube version"
+  type        = string
+}
+
+variable "sonarqube_db_name" {
+  description = "SonarQube PostgreSQL database name"
+  type        = string
+}
+
+variable "sonarqube_db_user" {
+  description = "SonarQube PostgreSQL database username"
+  type        = string
+}

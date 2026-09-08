@@ -18,36 +18,14 @@ resource "aws_iam_role" "sonarqube" {
   })
 }
 
+
 resource "aws_iam_role_policy_attachment" "ssm" {
   role       = aws_iam_role.sonarqube.name
   policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
 }
 
-resource "aws_iam_role_policy" "secrets" {
-  name = "${var.name}-secrets-policy"
-
-  role = aws_iam_role.sonarqube.id
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-
-    Statement = [
-      {
-        Effect = "Allow"
-
-        Action = [
-          "secretsmanager:GetSecretValue",
-          "secretsmanager:PutSecretValue"
-        ]
-
-        Resource = aws_secretsmanager_secret.sonarqube_db.arn
-      }
-    ]
-  })
-}
 
 resource "aws_iam_instance_profile" "sonarqube" {
-  name = "${var.name}-instance-profile"
-
+  name = "${var.name}-profile"
   role = aws_iam_role.sonarqube.name
 }

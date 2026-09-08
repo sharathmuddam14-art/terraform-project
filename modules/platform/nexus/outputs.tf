@@ -1,19 +1,15 @@
 output "instance_id" {
-  description = "Nexus EC2 instance ID"
-  value       = aws_instance.this.id
+  value = aws_instance.this.id
 }
 
 output "private_ip" {
-  description = "Nexus private IP"
-  value       = aws_instance.this.private_ip
+  value = aws_instance.this.private_ip
 }
 
 output "security_group_id" {
-  description = "Nexus security group ID"
-  value       = aws_security_group.nexus.id
+  value = aws_security_group.nexus.id
 }
 
 output "port" {
-  description = "Nexus port"
-  value       = 8081
+  value = var.nexus_port
 }

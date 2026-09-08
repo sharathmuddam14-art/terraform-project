@@ -1,5 +1,5 @@
 variable "name" {
-  description = "Nexus EC2 instance name"
+  description = "Nexus instance name"
   type        = string
 }
 
@@ -21,17 +21,30 @@ variable "alb_security_group_id" {
 variable "instance_type" {
   description = "Nexus EC2 instance type"
   type        = string
-  default     = "t3.medium"
 }
 
 variable "root_volume_size" {
-  description = "Nexus root EBS volume size in GB"
+  description = "Nexus root volume size"
   type        = number
-  default     = 50
 }
 
 variable "ami_id" {
-  description = "Optional custom AMI ID"
+  description = "Optional AMI ID"
   type        = string
   default     = null
+}
+
+variable "java_version" {
+  description = "Java version"
+  type        = string
+}
+
+variable "nexus_version" {
+  description = "Nexus version"
+  type        = string
+}
+
+variable "nexus_port" {
+  description = "Nexus application port"
+  type        = number
 }

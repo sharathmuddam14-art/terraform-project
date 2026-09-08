@@ -3,36 +3,65 @@
 set -e
 
 LOG_FILE="/var/log/nexus-install.log"
+
 exec > >(tee -a "$LOG_FILE") 2>&1
 
-echo "Starting Nexus installation: $(date)"
 
-NEXUS_VERSION="3.95.3-02"
-NEXUS_ARCHIVE="nexus-3.95.3-02-linux-x86_64.tar.gz"
-NEXUS_URL="https://download.sonatype.com/nexus/3/nexus-3.95.3-02-linux-x86_64.tar.gz"
+############################################################
+# VARIABLES
+############################################################
+
+NEXUS_VERSION="${nexus_version}"
+JAVA_VERSION="${java_version}"
+NEXUS_PORT="${nexus_port}"
+
+NEXUS_ARCHIVE="nexus-${NEXUS_VERSION}-linux-x86_64.tar.gz"
+
+NEXUS_URL="https://download.sonatype.com/nexus/3/$${NEXUS_ARCHIVE}"
 
 NEXUS_USER="nexus"
 NEXUS_HOME="/opt/nexus"
 SONATYPE_WORK="/opt/sonatype-work"
 NEXUS_DATA="/opt/sonatype-work/nexus3"
-NEXUS_DOWNLOAD="/opt/${NEXUS_ARCHIVE}"
+NEXUS_DOWNLOAD="/opt/$${NEXUS_ARCHIVE}"
 
-echo "Installing required packages"
+echo "Nexus version: $NEXUS_VERSION"
+echo "Java version: $JAVA_VERSION"
+echo "Nexus port: $NEXUS_PORT"
+
+
+############################################################
+# SYSTEM UPDATE
+############################################################
+
+dnf update -y
+
+
+############################################################
+# INSTALL REQUIRED PACKAGES
+############################################################
 
 dnf install -y \
-    java-21-amazon-corretto \
+    "java-$${JAVA_VERSION}-amazon-corretto" \
     wget \
     tar \
     gzip \
     git \
+    curl \
     amazon-ssm-agent
 
-echo "Starting SSM Agent"
+
+############################################################
+# START SSM AGENT
+############################################################
 
 systemctl enable amazon-ssm-agent
 systemctl start amazon-ssm-agent
 
-echo "Creating Nexus user"
+
+############################################################
+# CREATE NEXUS USER
+############################################################
 
 if ! id "$NEXUS_USER" >/dev/null 2>&1; then
     useradd \
@@ -42,7 +71,10 @@ if ! id "$NEXUS_USER" >/dev/null 2>&1; then
         "$NEXUS_USER"
 fi
 
-echo "Creating directories"
+
+############################################################
+# CREATE DIRECTORIES
+############################################################
 
 mkdir -p /opt
 mkdir -p "$SONATYPE_WORK"
@@ -50,24 +82,40 @@ mkdir -p "$NEXUS_DATA"
 mkdir -p "$NEXUS_DATA/log"
 mkdir -p "$NEXUS_DATA/tmp"
 
-echo "Downloading Nexus $NEXUS_VERSION"
+
+############################################################
+# DOWNLOAD NEXUS
+############################################################
 
 rm -f "$NEXUS_DOWNLOAD"
 
-wget --progress=dot:giga \
+wget \
+    --progress=dot:giga \
     -O "$NEXUS_DOWNLOAD" \
     "$NEXUS_URL"
 
 test -s "$NEXUS_DOWNLOAD"
 
-echo "Validating Nexus archive"
+
+############################################################
+# VALIDATE ARCHIVE
+############################################################
 
 tar -tzf "$NEXUS_DOWNLOAD" >/dev/null
 
-echo "Extracting Nexus"
+
+############################################################
+# EXTRACT
+############################################################
 
 cd /opt
+
 tar -xzf "$NEXUS_DOWNLOAD"
+
+
+############################################################
+# FIND NEXUS DIRECTORY
+############################################################
 
 NEXUS_DIR=$(find /opt \
     -maxdepth 1 \
@@ -75,20 +123,26 @@ NEXUS_DIR=$(find /opt \
     -name "nexus-${NEXUS_VERSION}" \
     | head -n 1)
 
+
 if [ -z "$NEXUS_DIR" ]; then
     echo "ERROR: Nexus directory not found"
     ls -lah /opt
     exit 1
 fi
 
-echo "Nexus directory: $NEXUS_DIR"
 
 if [ ! -f "$NEXUS_DIR/bin/nexus" ]; then
     echo "ERROR: Nexus executable not found"
     exit 1
 fi
 
+
 chmod 755 "$NEXUS_DIR/bin/nexus"
+
+
+############################################################
+# JAVA HOME
+############################################################
 
 if [ -x "$NEXUS_DIR/jdk/bin/java" ]; then
     NEXUS_JAVA_HOME="$NEXUS_DIR/jdk"
@@ -97,16 +151,25 @@ else
     NEXUS_JAVA_HOME="$SYSTEM_JAVA_HOME"
 fi
 
-echo "Nexus Java: $NEXUS_JAVA_HOME"
+
+############################################################
+# SYMLINK
+############################################################
 
 ln -sfn "$NEXUS_DIR" "$NEXUS_HOME"
 
-echo "Setting permissions"
+
+############################################################
+# PERMISSIONS
+############################################################
 
 chown -R "$NEXUS_USER:$NEXUS_USER" "$NEXUS_DIR"
 chown -R "$NEXUS_USER:$NEXUS_USER" "$SONATYPE_WORK"
 
-echo "Creating nexus.rc"
+
+############################################################
+# NEXUS RC
+############################################################
 
 cat > "$NEXUS_HOME/bin/nexus.rc" <<'EOF'
 run_as_user="nexus"
@@ -115,7 +178,10 @@ EOF
 chown "$NEXUS_USER:$NEXUS_USER" "$NEXUS_HOME/bin/nexus.rc"
 chmod 644 "$NEXUS_HOME/bin/nexus.rc"
 
-echo "Creating Nexus JVM configuration"
+
+############################################################
+# NEXUS JVM OPTIONS
+############################################################
 
 cat > "$NEXUS_HOME/bin/nexus.vmoptions" <<EOF
 -Xms1024m
@@ -131,7 +197,23 @@ EOF
 chown "$NEXUS_USER:$NEXUS_USER" "$NEXUS_HOME/bin/nexus.vmoptions"
 chmod 644 "$NEXUS_HOME/bin/nexus.vmoptions"
 
-echo "Creating Nexus systemd service"
+
+############################################################
+# NEXUS PORT
+############################################################
+
+mkdir -p "$NEXUS_DATA/etc"
+
+cat > "$NEXUS_DATA/etc/nexus.properties" <<EOF
+application-port=$NEXUS_PORT
+EOF
+
+chown "$NEXUS_USER:$NEXUS_USER" "$NEXUS_DATA/etc/nexus.properties"
+
+
+############################################################
+# SYSTEMD SERVICE
+############################################################
 
 cat > /etc/systemd/system/nexus.service <<EOF
 [Unit]
@@ -141,8 +223,9 @@ Wants=network-online.target
 
 [Service]
 Type=forking
-User=nexus
-Group=nexus
+
+User=$NEXUS_USER
+Group=$NEXUS_USER
 
 LimitNOFILE=65536
 LimitNPROC=65536
@@ -150,8 +233,8 @@ LimitNPROC=65536
 Environment="INSTALL4J_JAVA_HOME=$NEXUS_JAVA_HOME"
 Environment="JAVA_HOME=$NEXUS_JAVA_HOME"
 
-ExecStart=/opt/nexus/bin/nexus start
-ExecStop=/opt/nexus/bin/nexus stop
+ExecStart=$NEXUS_HOME/bin/nexus start
+ExecStop=$NEXUS_HOME/bin/nexus stop
 
 Restart=on-failure
 RestartSec=10
@@ -163,65 +246,79 @@ TimeoutStopSec=600
 WantedBy=multi-user.target
 EOF
 
+
+############################################################
+# START
+############################################################
+
 systemd-analyze verify /etc/systemd/system/nexus.service
 
 systemctl daemon-reload
+
 systemctl enable nexus
+
 systemctl start nexus
 
-echo "Waiting for Nexus"
+
+############################################################
+# WAIT FOR NEXUS
+############################################################
 
 NEXUS_STARTED=false
 
 for i in {1..60}; do
-    if curl -fs http://127.0.0.1:8081/ >/dev/null 2>&1; then
-        echo "Nexus is responding on port 8081"
+
+    if curl -fs \
+        "http://127.0.0.1:$${NEXUS_PORT}/" \
+        >/dev/null 2>&1; then
+
+        echo "Nexus is responding"
+
         NEXUS_STARTED=true
+
         break
     fi
 
     echo "Waiting for Nexus... $i/60"
+
     sleep 10
+
 done
 
-echo "Nexus service status"
+
+############################################################
+# STATUS
+############################################################
+
 systemctl status nexus --no-pager -l || true
 
-echo "Port 8081"
-ss -lntp | grep 8081 || true
+ss -lntp | grep "$NEXUS_PORT" || true
 
-echo "Nexus process"
 ps -ef | grep nexus | grep -v grep || true
 
-echo "Nexus logs"
 ls -lh "$NEXUS_DATA/log/" || true
 
-if [ -f "$NEXUS_DATA/admin.password" ]; then
-    echo "Nexus admin password file created"
-    ls -lh "$NEXUS_DATA/admin.password"
-fi
+
+############################################################
+# FINAL CHECK
+############################################################
 
 if [ "$NEXUS_STARTED" = true ]; then
 
     echo "=========================================="
     echo "NEXUS INSTALLATION SUCCESSFUL"
     echo "=========================================="
+
     echo "Version: $NEXUS_VERSION"
     echo "Java: $NEXUS_JAVA_HOME"
     echo "Data: $NEXUS_DATA"
-    echo "Port: 8081"
-    echo "Service: $(systemctl is-active nexus)"
-    echo "Enabled: $(systemctl is-enabled nexus)"
+    echo "Port: $NEXUS_PORT"
 
 else
 
-    echo "=========================================="
     echo "ERROR: Nexus did not start"
-    echo "=========================================="
 
     journalctl -u nexus --no-pager -n 100 || true
 
     exit 1
 fi
-
-echo "Nexus installation completed: $(date)"

@@ -3,7 +3,7 @@ resource "aws_lb_listener" "jenkins" {
 
   load_balancer_arn = aws_lb.this.arn
 
-  port     = 8080
+  port     = var.jenkins_port
   protocol = "HTTP"
 
   default_action {
@@ -13,12 +13,13 @@ resource "aws_lb_listener" "jenkins" {
   }
 }
 
+
 resource "aws_lb_listener" "nexus" {
   count = local.enable_nexus ? 1 : 0
 
   load_balancer_arn = aws_lb.this.arn
 
-  port     = 8081
+  port     = var.nexus_port
   protocol = "HTTP"
 
   default_action {
@@ -26,14 +27,15 @@ resource "aws_lb_listener" "nexus" {
 
     target_group_arn = aws_lb_target_group.nexus[0].arn
   }
-
 }
+
+
 resource "aws_lb_listener" "sonarqube" {
   count = local.enable_sonarqube ? 1 : 0
 
   load_balancer_arn = aws_lb.this.arn
 
-  port     = 9000
+  port     = var.sonarqube_port
   protocol = "HTTP"
 
   default_action {

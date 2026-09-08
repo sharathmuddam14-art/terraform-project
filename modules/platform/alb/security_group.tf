@@ -1,35 +1,34 @@
 resource "aws_security_group" "alb" {
-  name        = "test-platform-alb-sg"
+  name        = "${var.environment}-platform-alb-sg"
   description = "Security group for platform ALB"
   vpc_id      = var.vpc_id
 
   ingress {
-    description = "Jenkins dashboard"
-    from_port   = 8080
-    to_port     = 8080
+    description = "Jenkins"
+    from_port   = var.jenkins_port
+    to_port     = var.jenkins_port
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
+
   ingress {
-  description = "Nexus dashboard"
-  from_port   = 8081
-  to_port     = 8081
-  protocol    = "tcp"
-  cidr_blocks = ["0.0.0.0/0"]
-}
-ingress {
-  description = "SonarQube dashboard"
+    description = "Nexus"
+    from_port   = var.nexus_port
+    to_port     = var.nexus_port
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 
-  from_port = 9000
-  to_port   = 9000
-
-  protocol = "tcp"
-
-  cidr_blocks = ["0.0.0.0/0"]
-}
+  ingress {
+    description = "SonarQube"
+    from_port   = var.sonarqube_port
+    to_port     = var.sonarqube_port
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 
   egress {
-    description = "ALB outbound access"
+    description = "Allow outbound traffic"
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
@@ -37,6 +36,8 @@ ingress {
   }
 
   tags = {
-    Name = "test-platform-alb-sg"
+    Name        = "${var.environment}-platform-alb-sg"
+    Environment = var.environment
+    Service     = "platform-alb"
   }
 }

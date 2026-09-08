@@ -1,5 +1,5 @@
 output "instance_id" {
-  description = "Jenkins instance ID"
+  description = "Jenkins EC2 instance ID"
   value       = aws_instance.this.id
 }
 
@@ -15,5 +15,5 @@ output "security_group_id" {
 
 output "port" {
   description = "Jenkins port"
-  value       = 8080
+  value       = var.jenkins_port
 }

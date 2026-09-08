@@ -1,5 +1,5 @@
 resource "aws_lb" "this" {
-  name               = "test-platform-alb"
+  name               = var.alb_name
   internal           = false
   load_balancer_type = "application"
 
@@ -12,6 +12,8 @@ resource "aws_lb" "this" {
   enable_deletion_protection = false
 
   tags = {
-    Name = "test-platform-alb"
+    Name        = var.alb_name
+    Environment = var.environment
+    Service     = "platform-alb"
   }
 }

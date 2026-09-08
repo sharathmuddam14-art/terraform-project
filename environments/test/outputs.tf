@@ -124,61 +124,35 @@ output "kms_key_arn" {
   value = module.kms.kms_key_arn
 
 }
-############################################################
-# PLATFORM ALB
-############################################################
-
 output "platform_alb_dns_name" {
   description = "Platform ALB DNS name"
   value       = module.alb.alb_dns_name
 }
 
-output "jenkins_instance_id" {
-  description = "Jenkins EC2 instance ID"
-  value       = module.alb.jenkins_instance_id
-}
-
-output "jenkins_private_ip" {
-  description = "Jenkins private IP"
-  value       = module.alb.jenkins_private_ip
-}
-
 output "jenkins_url" {
-  description = "Jenkins dashboard URL"
+  description = "Jenkins URL"
   value       = module.alb.jenkins_url
-}
-output "nexus_instance_id" {
-  description = "Nexus EC2 instance ID"
-  value       = module.alb.nexus_instance_id
-}
-
-output "nexus_private_ip" {
-  description = "Nexus private IP"
-  value       = module.alb.nexus_private_ip
 }
 
 output "nexus_url" {
-  description = "Nexus dashboard URL"
+  description = "Nexus URL"
   value       = module.alb.nexus_url
-}
-output "sonarqube_instance_id" {
-  description = "SonarQube EC2 instance ID"
-  value       = module.alb.sonarqube_instance_id
-}
-
-output "sonarqube_private_ip" {
-  description = "SonarQube private IP address"
-  value       = module.alb.sonarqube_private_ip
 }
 
 output "sonarqube_url" {
-  description = "SonarQube dashboard URL"
+  description = "SonarQube URL"
   value       = module.alb.sonarqube_url
 }
 
-output "sonarqube_database_secret_arn" {
-  description = "AWS Secrets Manager ARN containing SonarQube PostgreSQL credentials"
-  value       = module.alb.sonarqube_database_secret_arn
+output "jenkins_instance_id" {
+  value = module.alb.jenkins_instance_id
 }
 
+output "nexus_instance_id" {
+  value = module.alb.nexus_instance_id
+}
+
+output "sonarqube_instance_id" {
+  value = module.alb.sonarqube_instance_id
+}
 
