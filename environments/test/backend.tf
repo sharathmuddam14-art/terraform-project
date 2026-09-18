@@ -2,7 +2,7 @@ terraform {
 
   backend "s3" {
 
-    bucket = "sharath-tfstate-010160406667"
+    bucket = "sharath-tfstate-397332849331"
 
     key = "test/terraform.tfstate"
 

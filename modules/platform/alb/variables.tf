@@ -127,3 +127,14 @@ variable "sonarqube_db_user" {
   description = "SonarQube database username"
   type        = string
 }
+variable "jenkins_ami_id" {
+  description = "AMI ID for Jenkins EC2 instance"
+  type        = string
+  default     = null
+}
+
+variable "nexus_ami_id" {
+  description = "AMI ID for Nexus EC2 instance"
+  type        = string
+  default     = null
+}

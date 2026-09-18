@@ -196,7 +196,7 @@ node_groups = {
 
     instance_types = [
 
-      "t3.medium"
+      "c7i-flex.large"
 
     ]
 
@@ -210,10 +210,10 @@ node_groups = {
     disk_size = 50
 
 
-    desired_size = 0
+    desired_size = 1
 
 
-    min_size = 0
+    min_size = 1
 
 
     max_size = 1
@@ -346,7 +346,7 @@ rds = {
   # BACKUP
   ##########################################################
 
-  backup_retention_period  = 7
+  backup_retention_period  = 1
   backup_window            = "03:00-04:00"
   maintenance_window       = "sun:04:00-sun:05:00"
   copy_tags_to_snapshot    = true
@@ -514,7 +514,7 @@ platform_alb_name = "test-platform-alb"
 
 jenkins_enabled   = true
 nexus_enabled     = true
-sonarqube_enabled = true
+sonarqube_enabled = false
 
 
 # ============================================================
@@ -540,8 +540,11 @@ sonarqube_port = 9000
 # ============================================================
 
 jenkins_instance_type   = "t3.micro"
-nexus_instance_type     = "t3.micro"
+nexus_instance_type     = "c7i-flex.large"
 sonarqube_instance_type = "t3.micro"
+
+jenkins_ami_id = "ami-02159ad7e38d562f2"
+nexus_ami_id   = "ami-086e059ace28f3ad5"
 
 
 # ============================================================

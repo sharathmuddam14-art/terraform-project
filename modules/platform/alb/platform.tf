@@ -13,6 +13,7 @@ module "jenkins" {
 
   instance_type    = var.jenkins_instance_type
   root_volume_size = var.jenkins_root_volume_size
+  ami_id          = var.jenkins_ami_id
 
   java_version    = var.jenkins_java_version
   jenkins_package = var.jenkins_package
@@ -35,6 +36,7 @@ module "nexus" {
 
   instance_type    = var.nexus_instance_type
   root_volume_size = var.nexus_root_volume_size
+  ami_id           = var.nexus_ami_id
 
   java_version  = var.nexus_java_version
   nexus_version = var.nexus_version

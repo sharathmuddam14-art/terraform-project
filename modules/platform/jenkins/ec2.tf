@@ -13,12 +13,13 @@ resource "aws_instance" "this" {
     aws_security_group.jenkins.id
   ]
 
-user_data = templatefile("${path.module}/user_data.sh", {
-  java_version    = var.java_version
-  JAVA_VERSION    = var.java_version
-  jenkins_package = var.jenkins_package
-  jenkins_port    = var.jenkins_port
-})
+  user_data = templatefile("${path.module}/user_data.sh", {
+    java_version    = var.java_version
+    jenkins_package = var.jenkins_package
+    jenkins_port    = var.jenkins_port
+  })
+
+  user_data_replace_on_change = true
 
   root_block_device {
     volume_type = "gp3"

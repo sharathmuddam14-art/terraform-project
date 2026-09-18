@@ -483,6 +483,9 @@ module "alb" {
   nexus_instance_type     = var.nexus_instance_type
   sonarqube_instance_type = var.sonarqube_instance_type
 
+  jenkins_ami_id = var.jenkins_ami_id
+  nexus_ami_id   = var.nexus_ami_id
+
   jenkins_root_volume_size   = var.jenkins_root_volume_size
   nexus_root_volume_size     = var.nexus_root_volume_size
   sonarqube_root_volume_size = var.sonarqube_root_volume_size
